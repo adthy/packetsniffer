@@ -18,9 +18,8 @@ console = Console()
 
 # Parse Arguments
 parser = argparse.ArgumentParser(description="A simple packet sniffer")
-parser.add_argument("num", type=int, help="Number of packets to be captured")
 parser.add_argument(
-    "-v", "--show", help="Display the packets captured", action="store_true"
+    "-v", "--show", help="Display the packets captured"
 )
 parser.add_argument(
     "-s", "--savefile", help="CSV file to save the packets to", default="capture.csv"
@@ -122,7 +121,7 @@ if args.forge:
         console.print(table)
 
 
-if args.num:
+if args.show:
     with open(args.savefile, "w") as file:
         writer = csv.DictWriter(file, headers, lineterminator="\n")
         writer.writeheader()
@@ -134,7 +133,7 @@ if args.num:
             TimeElapsedColumn(),
             SpinnerColumn("arrow3"),
         )
-        task = progress.add_task("Capturing packets...", total=args.num)
+        task = progress.add_task("Capturing packets...", total=int(args.show))
 
         with progress:
             while not progress.finished:
@@ -143,8 +142,6 @@ if args.num:
                 writer.writerow(unpacked)
                 progress.update(task, advance=1.0)
 
-
-if args.show:
     with open(args.savefile, "r") as file:
         reader = csv.DictReader(file)
 
@@ -178,9 +175,4 @@ if args.show:
 # disabled promiscuous mode
 s.ioctl(SIO_RCVALL, RCVALL_OFF)
 
-def get_fields(layer, frame):
-    field_names = eval(f'[field.name for field in {layer}.fields_desc]')
-    fields = dict()
-    fields = {field_name: getattr(frame, field_name) for field_name in field_names}
-    return fields
 
