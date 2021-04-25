@@ -18,9 +18,9 @@ def getFlags(data):
     MF = data & 0x2000
     MF >>= 13
 
-    tabs = "\n\t\t\t"
-    flags = flagR[R] + tabs + flagDF[DF] + tabs + flagMF[MF]
+    flags = f"{flagR[R]}\n{flagDF[DF]}\n{flagMF[MF]}"
     return flags
+
 
 # Get Protocol: 8 bits
 
