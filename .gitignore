@@ -133,3 +133,6 @@ sniff
 
 # VSCode
 .vscode
+
+# Sniffer
+capture.csv
