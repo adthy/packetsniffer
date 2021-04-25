@@ -1,3 +1,4 @@
+from scapy.all import *
 from socket import *
 from protocolFlags import *
 from typeOfService import *
@@ -11,6 +12,7 @@ import csv
 from rich.console import Console
 from rich.progress import Progress, BarColumn, TimeElapsedColumn, SpinnerColumn
 from rich.table import Table
+from rich import box
 
 console = Console()
 
@@ -21,10 +23,24 @@ parser.add_argument(
     "-v", "--show", help="Display the packets captured", action="store_true"
 )
 parser.add_argument(
-    "-f", "--file", help="CSV file to save the packets to", default="capture.csv"
+    "-s", "--savefile", help="CSV file to save the packets to", default="capture.csv"
+)
+parser.add_argument(
+    "-f", "--forge", help="Forge a packet", action="store_true"
+)
+parser.add_argument(
+    "-e", "--ethernet", help="Encapsulate with ethernet frame", nargs='*'
+)
+parser.add_argument(
+    "-p", "--protocol", help="Assigns protocol with settings", nargs='*'
+)
+parser.add_argument(
+    "-o", "--optional", help="Optional IP settings", nargs='*'
+)
+parser.add_argument(
+    "-l", "--payload", help="Assigns payload", nargs='*'
 )
 args = parser.parse_args()
-
 
 # Receive a Datagram
 def receiveData(s):
@@ -38,7 +54,6 @@ def receiveData(s):
         sys.exc_info()
     return data[0]
 
-
 # the public network interface
 HOST = gethostbyname(gethostname())
 
@@ -49,8 +64,66 @@ s.bind((HOST, 0))
 s.setsockopt(IPPROTO_IP, IP_HDRINCL, 1)
 s.ioctl(SIO_RCVALL, RCVALL_ON)
 
+if args.forge:
+    packet_string = []
+
+    if args.ethernet:
+        packet_string.append(f"Ether({','.join(args.ethernet)})")
+
+    if args.optional:
+        packet_string.append(f"IP({','.join(args.optional)})")
+
+    if args.protocol:
+        packet_string.append(f"{args.protocol[0]}({','.join(args.protocol[1:])})")
+
+    if args.payload:
+        formatted = ' '.join(args.payload)
+        packet_string.append(f'\"{formatted}\"')
+
+    packet = eval('/'.join(packet_string))
+    console.rule(
+        f"[bold red]Forged Packet"
+    )
+
+    #Print ethernet
+    if args.ethernet:
+        ETHfields = [field.name for field in Ether.fields_desc]
+        ETHtable = Table(title="Ethernet", box=box.HORIZONTALS)
+        ETHtable.add_column("Field", style="cyan")
+        ETHtable.add_column("Value", style="magenta")
+        for field in ETHfields:
+            ETHtable.add_row(field, str(getattr(packet['Ether'], field)))
+        console.print(ETHtable)
+
+    #Print IP
+    IPfields = [field.name for field in IP.fields_desc]
+    IPtable = Table(title="IP", box=box.HORIZONTALS)
+    IPtable.add_column("Field", style="cyan")
+    IPtable.add_column("Value", style="magenta")
+    for field in IPfields:
+        IPtable.add_row(field, str(getattr(packet['IP'], field)))
+    console.print(IPtable)
+
+    #Print protocol layer
+    if args.protocol:
+        Pfields = eval(f'[field.name for field in {args.protocol[0]}.fields_desc]')
+        Ptable = Table(title=args.protocol[0], box=box.HORIZONTALS)
+        Ptable.add_column("Field", style="cyan")
+        Ptable.add_column("Value", style="magenta")
+        for field in Pfields:
+            Ptable.add_row(field, str(getattr(packet[args.protocol[0]], field)))
+        console.print(Ptable)
+
+    if args.payload:
+        table = Table(title="Payload", box=box.HORIZONTALS)
+        table.add_column("Field", style="cyan")
+        table.add_column("Value", style="magenta")
+        table.add_row("Raw", packet_string[-1])
+        console.print(table)
+
+
 if args.num:
-    with open(args.file, "w") as file:
+    with open(args.savefile, "w") as file:
         writer = csv.DictWriter(file, headers, lineterminator="\n")
         writer.writeheader()
 
@@ -72,7 +145,7 @@ if args.num:
 
 
 if args.show:
-    with open(args.file, "r") as file:
+    with open(args.savefile, "r") as file:
         reader = csv.DictReader(file)
 
         for unpacked in reader:
@@ -104,3 +177,10 @@ if args.show:
 
 # disabled promiscuous mode
 s.ioctl(SIO_RCVALL, RCVALL_OFF)
+
+def get_fields(layer, frame):
+    field_names = eval(f'[field.name for field in {layer}.fields_desc]')
+    fields = dict()
+    fields = {field_name: getattr(frame, field_name) for field_name in field_names}
+    return fields
+
