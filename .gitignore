@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Virtual Environments
+sniff
+
+# VSCode
+.vscode
+
+# Sniffer
+capture.csv
