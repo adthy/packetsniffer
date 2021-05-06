@@ -28,6 +28,9 @@ parser.add_argument(
     "-f", "--forge", help="Forge a packet", action="store_true"
 )
 parser.add_argument(
+    "-r", "--send", help="Send a forged packet and print response", action="store_true"
+)
+parser.add_argument(
     "-e", "--ethernet", help="Encapsulate with ethernet frame", nargs='*'
 )
 parser.add_argument(
@@ -120,6 +123,49 @@ if args.forge:
         table.add_row("Raw", packet_string[-1])
         console.print(table)
 
+    if args.send:
+        response = sr1(packet)
+        console.rule(
+            f"[bold red]Received Response"
+        )
+        #Print ethernet
+        if args.ethernet:
+            ETHfields = [field.name for field in Ether.fields_desc]
+            ETHtable = Table(title="Ethernet", box=box.HORIZONTALS)
+            ETHtable.add_column("Field", style="cyan")
+            ETHtable.add_column("Value", style="magenta")
+            for field in ETHfields:
+                ETHtable.add_row(field, str(getattr(response['Ether'], field)))
+            console.print(ETHtable)
+
+        #Print IP
+        IPfields = [field.name for field in IP.fields_desc]
+        IPtable = Table(title="IP", box=box.HORIZONTALS)
+        IPtable.add_column("Field", style="cyan")
+        IPtable.add_column("Value", style="magenta")
+        for field in IPfields:
+            IPtable.add_row(field, str(getattr(response['IP'], field)))
+        console.print(IPtable)
+
+        #Print protocol layer
+        if args.protocol:
+            Pfields = eval(f'[field.name for field in {args.protocol[0]}.fields_desc]')
+            Ptable = Table(title=args.protocol[0], box=box.HORIZONTALS)
+            Ptable.add_column("Field", style="cyan")
+            Ptable.add_column("Value", style="magenta")
+            for field in Pfields:
+                Ptable.add_row(field, str(getattr(response[args.protocol[0]], field)))
+            console.print(Ptable)
+
+        if args.payload:
+            fields = [field.name for field in Raw.fields_desc]
+            table = Table(title="Payload", box=box.HORIZONTALS)
+            table.add_column("Field", style="cyan")
+            table.add_column("Value", style="magenta")
+            for field in fields:
+                table.add_row(field, str(getattr(response[args.protocol[0]], field)))
+            console.print(table)
+
 
 if args.show:
     with open(args.savefile, "w") as file:
@@ -174,5 +220,3 @@ if args.show:
 
 # disabled promiscuous mode
 s.ioctl(SIO_RCVALL, RCVALL_OFF)
-
-
