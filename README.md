@@ -26,4 +26,3 @@ Similar to IP packets, datagrams from the processing layer of network architectu
 - Sockets: Networking interface library
 - Struct: Interpret bytes as packed binary data
 - Textwrap: Data formatting and processing
-- Scapy: Packet forging
