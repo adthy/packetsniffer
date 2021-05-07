@@ -5,6 +5,7 @@ The packet sniffer is a software tool used to analyze and introspect network dat
 ## Features
 
 ### Format MAC addresses (data link layer)
+
 The packet sniffer primarily deals with ethernet cables. The MAC addresses are found through unpacking ethernet frames and performing string operations to convert the bit-level data to a standard format hexadecimal string, thereby getting the source and destination addresses of traveling packets.
 
 ### Capturing traffic
@@ -20,7 +21,9 @@ IP headers and packets are caught, analyzed, and unpacked into a string format f
 Similar to IP packets, datagrams from the processing layer of network architecture can be unpacked and viewed.
 
 ## Technologies
+
 - Python3: Underlying driver code
 - Sockets: Networking interface library
 - Struct: Interpret bytes as packed binary data
 - Textwrap: Data formatting and processing
+- Scapy: Packet forging
