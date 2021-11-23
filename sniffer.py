@@ -18,30 +18,22 @@ console = Console()
 
 # Parse Arguments
 parser = argparse.ArgumentParser(description="A simple packet sniffer")
-parser.add_argument(
-    "-v", "--show", help="Display the packets captured"
-)
+parser.add_argument("-v", "--show", help="Display the packets captured")
 parser.add_argument(
     "-s", "--savefile", help="CSV file to save the packets to", default="capture.csv"
 )
-parser.add_argument(
-    "-f", "--forge", help="Forge a packet", action="store_true"
-)
+parser.add_argument("-f", "--forge", help="Forge a packet", action="store_true")
 parser.add_argument(
     "-r", "--send", help="Send a forged packet and print response", action="store_true"
 )
 parser.add_argument(
-    "-e", "--ethernet", help="Encapsulate with ethernet frame", nargs='*'
+    "-e", "--ethernet", help="Encapsulate with ethernet frame", nargs="*"
 )
 parser.add_argument(
-    "-p", "--protocol", help="Assigns protocol with settings", nargs='*'
+    "-p", "--protocol", help="Assigns protocol with settings", nargs="*"
 )
-parser.add_argument(
-    "-o", "--optional", help="Optional IP settings", nargs='*'
-)
-parser.add_argument(
-    "-l", "--payload", help="Assigns payload", nargs='*'
-)
+parser.add_argument("-o", "--optional", help="Optional IP settings", nargs="*")
+parser.add_argument("-l", "--payload", help="Assigns payload", nargs="*")
 args = parser.parse_args()
 
 # Receive a Datagram
@@ -55,6 +47,7 @@ def receiveData(s):
         print("An error happened: ")
         sys.exc_info()
     return data[0]
+
 
 # the public network interface
 HOST = gethostbyname(gethostname())
@@ -79,36 +72,34 @@ if args.forge:
         packet_string.append(f"{args.protocol[0]}({','.join(args.protocol[1:])})")
 
     if args.payload:
-        formatted = ' '.join(args.payload)
-        packet_string.append(f'\"{formatted}\"')
+        formatted = " ".join(args.payload)
+        packet_string.append(f'"{formatted}"')
 
-    packet = eval('/'.join(packet_string))
-    console.rule(
-        f"[bold red]Forged Packet"
-    )
+    packet = eval("/".join(packet_string))
+    console.rule(f"[bold red]Forged Packet")
 
-    #Print ethernet
+    # Print ethernet
     if args.ethernet:
         ETHfields = [field.name for field in Ether.fields_desc]
         ETHtable = Table(title="Ethernet", box=box.HORIZONTALS)
         ETHtable.add_column("Field", style="cyan")
         ETHtable.add_column("Value", style="magenta")
         for field in ETHfields:
-            ETHtable.add_row(field, str(getattr(packet['Ether'], field)))
+            ETHtable.add_row(field, str(getattr(packet["Ether"], field)))
         console.print(ETHtable)
 
-    #Print IP
+    # Print IP
     IPfields = [field.name for field in IP.fields_desc]
     IPtable = Table(title="IP", box=box.HORIZONTALS)
     IPtable.add_column("Field", style="cyan")
     IPtable.add_column("Value", style="magenta")
     for field in IPfields:
-        IPtable.add_row(field, str(getattr(packet['IP'], field)))
+        IPtable.add_row(field, str(getattr(packet["IP"], field)))
     console.print(IPtable)
 
-    #Print protocol layer
+    # Print protocol layer
     if args.protocol:
-        Pfields = eval(f'[field.name for field in {args.protocol[0]}.fields_desc]')
+        Pfields = eval(f"[field.name for field in {args.protocol[0]}.fields_desc]")
         Ptable = Table(title=args.protocol[0], box=box.HORIZONTALS)
         Ptable.add_column("Field", style="cyan")
         Ptable.add_column("Value", style="magenta")
@@ -125,31 +116,29 @@ if args.forge:
 
     if args.send:
         response = sr1(packet)
-        console.rule(
-            f"[bold red]Received Response"
-        )
-        #Print ethernet
+        console.rule(f"[bold red]Received Response")
+        # Print ethernet
         if args.ethernet:
             ETHfields = [field.name for field in Ether.fields_desc]
             ETHtable = Table(title="Ethernet", box=box.HORIZONTALS)
             ETHtable.add_column("Field", style="cyan")
             ETHtable.add_column("Value", style="magenta")
             for field in ETHfields:
-                ETHtable.add_row(field, str(getattr(response['Ether'], field)))
+                ETHtable.add_row(field, str(getattr(response["Ether"], field)))
             console.print(ETHtable)
 
-        #Print IP
+        # Print IP
         IPfields = [field.name for field in IP.fields_desc]
         IPtable = Table(title="IP", box=box.HORIZONTALS)
         IPtable.add_column("Field", style="cyan")
         IPtable.add_column("Value", style="magenta")
         for field in IPfields:
-            IPtable.add_row(field, str(getattr(response['IP'], field)))
+            IPtable.add_row(field, str(getattr(response["IP"], field)))
         console.print(IPtable)
 
-        #Print protocol layer
+        # Print protocol layer
         if args.protocol:
-            Pfields = eval(f'[field.name for field in {args.protocol[0]}.fields_desc]')
+            Pfields = eval(f"[field.name for field in {args.protocol[0]}.fields_desc]")
             Ptable = Table(title=args.protocol[0], box=box.HORIZONTALS)
             Ptable.add_column("Field", style="cyan")
             Ptable.add_column("Value", style="magenta")
@@ -204,13 +193,13 @@ if args.show:
 
             table.add_row("Version", unpacked["version"])
             table.add_row("Header Length", unpacked["IHL"] + " bytes")
-            table.add_row("Type of Service", unpacked["TOS"])
+            table.add_row("Type of Service", getTOS(int(unpacked["TOS"])))
             table.add_row("Length", unpacked["totalLength"])
             table.add_row("ID", f"{hex(int(unpacked['ID']))} ({unpacked['ID']})")
             table.add_row("Flags", getFlags(int(unpacked["flags"])))
             table.add_row("Fragment offset", unpacked["fragmentOffset"])
             table.add_row("TTL", unpacked["TTL"])
-            table.add_row("Protocol", unpacked["protocolNr"])
+            table.add_row("Protocol", getProtocol(int(unpacked["protocolNr"])))
             table.add_row("Checksum", unpacked["checksum"])
             table.add_row("Source", unpacked["sourceAddress"])
             table.add_row("Destination", unpacked["destinationAddress"])
